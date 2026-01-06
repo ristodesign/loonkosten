@@ -1,0 +1,77 @@
+-- Dummy data voor een Nederlands bedrijf
+INSERT INTO bedrijven (naam, adres, loonheffingsnummer, email, password, land, logo_path) VALUES
+('TechSolutions Nederland B.V.', 'Innovatiepark 12, 3521 AB Utrecht', '123456789L01', 'info@techsolutions.nl', '$2y$10$examplehashnl', 'NL', 'logos/techsolutions.png');
+
+-- Haal ID op voor NL bedrijf
+SET @nl_bedrijf_id = LAST_INSERT_ID();
+
+-- 10 diverse Nederlandse medewerkers
+INSERT INTO werknemers (bedrijf_id, naam, adres, geboortedatum, bsn, nationaliteit, email, password, loonheffingskorting) VALUES
+(@nl_bedrijf_id, 'Anna de Vries', 'Bloemstraat 45, 1011 AB Amsterdam', '1990-05-15', '123456789', 'NL', 'anna.devries@techsolutions.nl', '$2y$10$hash1', 1),
+(@nl_bedrijf_id, 'Mohammed Alami', 'Keizersgracht 78, 1015 CX Amsterdam', '1985-11-20', '234567890', 'NL', 'mohammed.alami@techsolutions.nl', '$2y$10$hash2', 1),
+(@nl_bedrijf_id, 'Sophie Jansen', 'Stationsweg 3, 3511 ED Utrecht', '1998-02-28', '345678901', 'NL', 'sophie.jansen@techsolutions.nl', '$2y$10$hash3', 0),
+(@nl_bedrijf_id, 'Pieter van den Berg', 'Dorpsstraat 101, 1234 AB Rotterdam', '1978-07-10', '456789012', 'NL', 'pieter.vandenberg@techsolutions.nl', '$2y$10$hash4', 1),
+(@nl_bedrijf_id, 'Lara Bakker', 'Parklaan 56, 5613 BH Eindhoven', '1993-09-05', '567890123', 'NL', 'lara.bakker@techsolutions.nl', '$2y$10$hash5', 1),
+(@nl_bedrijf_id, 'Kevin Smit', 'Marktplein 8, 4811 GH Breda', '2000-12-12', '678901234', 'NL', 'kevin.smit@techsolutions.nl', '$2y$10$hash6', 0),
+(@nl_bedrijf_id, 'Fatima El Moussaoui', 'Hoofdstraat 22, 2511 CD Den Haag', '1982-03-18', '789012345', 'NL', 'fatima.elmoussaoui@techsolutions.nl', '$2y$10$hash7', 1),
+(@nl_bedrijf_id, 'Jeroen van Dijk', 'Kerkstraat 99, 9717 HB Groningen', '1975-01-30', '890123456', 'NL', 'jeroen.vandijk@techsolutions.nl', '$2y$10$hash8', 1),
+(@nl_bedrijf_id, 'Emma Willems', 'Bosweg 4, 7311 LK Apeldoorn', '1995-06-22', '901234567', 'NL', 'emma.willems@techsolutions.nl', '$2y$10$hash9', 1),
+(@nl_bedrijf_id, 'Thomas de Boer', 'Rivierdijk 17, 3079 AB Rotterdam', '1988-10-08', '012345678', 'NL', 'thomas.deboer@techsolutions.nl', '$2y$10$hash10', 1);
+
+-- Contracten voor Nederlandse medewerkers (divers: fulltime, parttime, all-in, auto van de zaak, etc.)
+INSERT INTO contracten (
+	werknemer_id, type, bruto_salaris, is_uurloon, contract_uren_per_week,
+	pensioen_totaal_percentage, pensioen_werknemer_percentage,
+	reiskosten_recht, reiskosten_km_per_dag,
+	proeftijd_maanden, duur_type,
+	heeft_auto_van_de_zaak, auto_cataloguswaarde, auto_co2_uitstoot, auto_elektrisch, auto_bijdrage_werknemer
+) VALUES
+((SELECT id FROM werknemers WHERE email='anna.devries@techsolutions.nl'), 'Fulltime', 4500.00, 0, 40.00, 25.00, 8.00, 1, 50.00, 2, 'onbepaald', 1, 45000.00, 120, 1, 150.00),
+((SELECT id FROM werknemers WHERE email='mohammed.alami@techsolutions.nl'), 'Fulltime', 3800.00, 0, 40.00, 25.00, 8.00, 1, 30.00, 1, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='sophie.jansen@techsolutions.nl'), 'Parttime', 2800.00, 0, 24.00, 25.00, 8.00, 0, 0.00, 2, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='pieter.vandenberg@techsolutions.nl'), 'AllInOverurenBetaald', 5500.00, 0, 40.00, 25.00, 8.00, 1, 60.00, 0, 'onbepaald', 1, 60000.00, 180, 0, 200.00),
+((SELECT id FROM werknemers WHERE email='lara.bakker@techsolutions.nl'), 'Parttime', 2200.00, 1, 20.00, 25.00, 8.00, 1, 40.00, 2, 'bepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='kevin.smit@techsolutions.nl'), 'Fulltime', 3200.00, 0, 36.00, 25.00, 8.00, 0, 0.00, 2, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='fatima.elmoussaoui@techsolutions.nl'), 'Fulltime', 4200.00, 0, 40.00, 25.00, 8.00, 1, 45.00, 1, 'onbepaald', 1, 35000.00, 0, 1, 100.00),
+((SELECT id FROM werknemers WHERE email='jeroen.vandijk@techsolutions.nl'), 'AllInVastSalaris', 6000.00, 0, 40.00, 25.00, 8.00, 1, 70.00, 0, 'onbepaald', 1, 70000.00, 150, 0, 250.00),
+((SELECT id FROM werknemers WHERE email='emma.willems@techsolutions.nl'), 'Parttime', 2500.00, 0, 32.00, 25.00, 8.00, 0, 0.00, 2, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='thomas.deboer@techsolutions.nl'), 'Fulltime', 4000.00, 0, 38.00, 25.00, 8.00, 1, 55.00, 2, 'onbepaald', 0, 0, 0, 0, 0.00);
+
+-- Dummy data voor een Belgisch bedrijf
+INSERT INTO bedrijven (naam, adres, loonheffingsnummer, email, password, land, logo_path) VALUES
+('InnoTech Belgique SPRL', 'Rue de l\'Innovation 25, 1000 Bruxelles', 'BE0987654321', 'info@innotech.be', '$2y$10$examplehashbe', 'BE', 'logos/innotech.png');
+
+SET @be_bedrijf_id = LAST_INSERT_ID();
+
+-- 10 diverse Belgische medewerkers
+INSERT INTO werknemers (bedrijf_id, naam, adres, geboortedatum, rijksregisternummer, statuut, email, password, loonheffingskorting) VALUES
+(@be_bedrijf_id, 'Julie Dubois', 'Avenue Louise 123, 1050 Ixelles', '1992-04-18', '92.04.18-123.45', 'bediende', 'julie.dubois@innotech.be', '$2y$10$behash1', 1),
+(@be_bedrijf_id, 'Ahmed Benali', 'Chaussée de Waterloo 456, 1060 Saint-Gilles', '1987-09-25', '87.09.25-456.78', 'bediende', 'ahmed.benali@innotech.be', '$2y$10$behash2', 1),
+(@be_bedrijf_id, 'Sophie Laurent', 'Rue Neuve 78, 5000 Namur', '1999-01-11', '99.01.11-789.01', 'bediende', 'sophie.laurent@innotech.be', '$2y$10$behash3', 0),
+(@be_bedrijf_id, 'Marc Van der Linden', 'Boulevard Anspach 10, 1000 Bruxelles', '1976-12-03', '76.12.03-234.56', 'bediende', 'marc.vanderlinden@innotech.be', '$2y$10$behash4', 1),
+(@be_bedrijf_id, 'Nadia El Amrani', 'Grand Place 5, 4000 Liège', '1994-07-30', '94.07.30-567.89', 'arbeider', 'nadia.elamrani@innotech.be', '$2y$10$behash5', 1),
+(@be_bedrijf_id, 'Tom De Smet', 'Korenmarkt 22, 9000 Gent', '2001-03-14', '01.03.14-890.12', 'bediende', 'tom.desmet@innotech.be', '$2y$10$behash6', 0),
+(@be_bedrijf_id, 'Isabelle Peeters', 'Meir 100, 2000 Antwerpen', '1983-06-21', '83.06.21-345.67', 'bediende', 'isabelle.peeters@innotech.be', '$2y$10$behash7', 1),
+(@be_bedrijf_id, 'Lucas Moreau', 'Place Royale 8, 1000 Bruxelles', '1979-10-05', '79.10.05-678.90', 'bediende', 'lucas.moreau@innotech.be', '$2y$10$behash8', 1),
+(@be_bedrijf_id, 'Amina Rahmani', 'Rue des Bouchers 33, 1000 Bruxelles', '1996-08-17', '96.08.17-123.45', 'arbeider', 'amina.rahmani@innotech.be', '$2y$10$behash9', 1),
+(@be_bedrijf_id, 'Vincent Claes', 'Grote Markt 1, 2800 Mechelen', '1989-02-09', '89.02.09-456.78', 'bediende', 'vincent.claes@innotech.be', '$2y$10$behash10', 1);
+
+-- Contracten voor Belgische medewerkers (divers: bediende/arbeider, auto, 13e maand, etc.)
+INSERT INTO contracten (
+	werknemer_id, type, bruto_salaris, is_uurloon, contract_uren_per_week,
+	pensioen_totaal_percentage, pensioen_werknemer_percentage,
+	reiskosten_recht, reiskosten_km_per_dag,
+	paritair_comite, heeft_13e_maand,
+	proeftijd_maanden, duur_type,
+	heeft_auto_van_de_zaak, auto_cataloguswaarde, auto_co2_uitstoot, auto_elektrisch, auto_bijdrage_werknemer
+) VALUES
+((SELECT id FROM werknemers WHERE email='julie.dubois@innotech.be'), 'Fulltime', 4200.00, 0, 38.00, 25.00, 8.00, 1, 40.00, 'PC200', 1, 6, 'onbepaald', 1, 48000.00, 110, 1, 120.00),
+((SELECT id FROM werknemers WHERE email='ahmed.benali@innotech.be'), 'Fulltime', 3600.00, 0, 38.00, 25.00, 8.00, 1, 30.00, 'PC200', 1, 3, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='sophie.laurent@innotech.be'), 'Parttime', 2500.00, 0, 20.00, 25.00, 8.00, 0, 0.00, 'PC200', 0, 6, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='marc.vanderlinden@innotech.be'), 'Fulltime', 5500.00, 0, 38.00, 25.00, 8.00, 1, 60.00, 'PC218', 1, 0, 'onbepaald', 1, 65000.00, 160, 0, 200.00),
+((SELECT id FROM werknemers WHERE email='nadia.elamrani@innotech.be'), 'Fulltime', 2800.00, 1, 38.00, 25.00, 8.00, 1, 35.00, 'PC124', 1, 6, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='tom.desmet@innotech.be'), 'Parttime', 2200.00, 0, 30.00, 25.00, 8.00, 0, 0.00, 'PC200', 0, 6, 'bepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='isabelle.peeters@innotech.be'), 'Fulltime', 4800.00, 0, 38.00, 25.00, 8.00, 1, 50.00, 'PC200', 1, 3, 'onbepaald', 1, 40000.00, 0, 1, 150.00),
+((SELECT id FROM werknemers WHERE email='lucas.moreau@innotech.be'), 'Fulltime', 6000.00, 0, 38.00, 25.00, 8.00, 1, 70.00, 'PC218', 1, 0, 'onbepaald', 1, 75000.00, 140, 0, 250.00),
+((SELECT id FROM werknemers WHERE email='amina.rahmani@innotech.be'), 'Fulltime', 2600.00, 1, 38.00, 25.00, 8.00, 1, 45.00, 'PC111', 1, 6, 'onbepaald', 0, 0, 0, 0, 0.00),
+((SELECT id FROM werknemers WHERE email='vincent.claes@innotech.be'), 'Fulltime', 3900.00, 0, 38.00, 25.00, 8.00, 1, 55.00, 'PC200', 1, 6, 'onbepaald', 0, 0, 0, 0, 0.00);
