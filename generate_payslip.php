@@ -1,9 +1,10 @@
 <?php
-// generate_payslip.php - Loonstrook genereren + SEPA-export
+// generate_payslip.php - Volledige loonstrook genereren + SEPA-export
 session_start();
 require_once 'config.php';
 require_once 'functions.php';
 require_once 'vendor/autoload.php'; // mPDF
+require_once 'backend/sepa.php'; // SEPA-generatie
 
 if (!isset($_SESSION['bedrijf_id'])) {
 	header('Location: login_bedrijf.php');
@@ -14,8 +15,12 @@ $bedrijf_id = $_SESSION['bedrijf_id'];
 $bedrijf = db_getRow("SELECT * FROM bedrijven WHERE id = ?", [$bedrijf_id], 'i');
 $land = $bedrijf['land'];
 
-// Periode (voor nu januari 2026 – later dynamisch maken)
-$periode_id = 1;
+if (!$bedrijf) {
+	die('Bedrijf niet gevonden');
+}
+
+// Periode (dynamisch of via GET, hier voorbeeld januari 2026)
+$periode_id = $_GET['periode_id'] ?? 1;
 $periode = db_getRow("SELECT * FROM loonperiodes WHERE id = ?", [$periode_id], 'i');
 
 if (!$periode) {
@@ -31,7 +36,7 @@ $medewerkers = db_getAll("
 	WHERE w.bedrijf_id = ?
 ", [$bedrijf_id], 'i');
 
-$regels = getRegels($land);
+$regels = getRegels($land, date('Y'));
 
 $payments = []; // Voor SEPA
 $total_amount = 0;
@@ -87,18 +92,18 @@ foreach ($medewerkers as $m) {
 
 	// Vakantiegeld opbouw
 	$vakantiegeld_opbouw = berekenVakantiegeld($bruto_maand, $land, $periode_id, $regels);
-	updateVakantiegeld($werknemer_id, date('Y'), $vakantiegeld_opbouw);
+	updateVakantiegeld($werknemer_id, date('Y'), $vakantiegeld_opbouw, $land, $periode_id);
 
 	// Heffing
 	$jaarloon_geschat = $bruto_maand * 12;
-	$leeftijd_aow = (2026 - date('Y', strtotime($m['geboortedatum'] ?? '2000-01-01'))) >= 67;
+	$leeftijd_aow = (date('Y') - date('Y', strtotime($m['geboortedatum'] ?? '2000-01-01'))) >= 67;
 	$heffing = berekenHeffing($bruto_maand, $land, $jaarloon_geschat, $leeftijd_aow);
 
 	// Nettoloon
 	$nettoloon = $bruto_maand - $heffing - $pensioen['werknemer_bijdrage'];
 
-	// SEPA betaling
-	if ($m['iban']) {
+	// SEPA betaling toevoegen
+	if (!empty($m['iban'])) {
 		$payments[] = [
 			'name' => $m['naam'],
 			'iban' => $m['iban'],
@@ -113,17 +118,18 @@ foreach ($medewerkers as $m) {
 	$mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir()]);
 	$html = '<h1 style="text-align:center;">Loonstrook ' . date('F Y', strtotime($periode['start_datum'])) . '</h1>';
 	if ($bedrijf['logo_path'] && file_exists($bedrijf['logo_path'])) {
-		$html .= '<img src="' . $bedrijf['logo_path'] . '" width="150" style="float:right;"><br><br>';
+		$html .= '<img src="' . $bedrijf['logo_path'] . '" width="200" style="float:right;margin-bottom:20px;">';
 	}
 	$html .= '<p><strong>Werknemer:</strong> ' . htmlspecialchars($m['naam']) . '<br>
 			  <strong>Brutoloon:</strong> € ' . number_format($bruto_maand, 2) . '<br>
-			  <strong>Reiskosten:</strong> € ' . number_format($reiskosten, 2) . '<br>
-			  <strong>Pensioen werknemer:</strong> - € ' . number_format($pensioen['werknemer_bijdrage'], 2) . '<br>';
+			  <strong>Reiskosten (onbelast):</strong> € ' . number_format($reiskosten, 2) . '<br>
+			  <strong>Pensioenbijdrage werknemer:</strong> - € ' . number_format($pensioen['werknemer_bijdrage'], 2) . '<br>';
 	if ($m['heeft_auto_van_de_zaak']) {
-		$html .= '<strong>Bijtelling auto:</strong> € ' . number_format($bijtelling_maand, 2) . '<br>';
+		$html .= '<strong>Bijtelling auto van de zaak:</strong> € ' . number_format($bijtelling_maand, 2) . '<br>';
 	}
 	$html .= '<strong>Heffing:</strong> - € ' . number_format($heffing, 2) . '<br>
-			  <strong>Nettoloon:</strong> € ' . number_format($nettoloon, 2) . '</p>';
+			  <strong>Nettoloon:</strong> € ' . number_format($nettoloon, 2) . '<br>
+			  <strong>Vakantiegeld opbouw:</strong> € ' . number_format($vakantiegeld_opbouw, 2) . '</p>';
 
 	$mpdf->WriteHTML($html);
 	$pdf_path = PDF_DIR . "loonstrook_{$werknemer_id}_{$periode_id}.pdf";
@@ -131,17 +137,17 @@ foreach ($medewerkers as $m) {
 	$pdf_files[] = $pdf_path;
 
 	// DB opslaan
-	db_execute("INSERT INTO loonstroken (werknemer_id, periode_id, brutoloon, reiskosten, pensioen_werknemer, loonheffing, nettoloon, vakantiegeld_opbouw, pdf_path) 
+	db_execute("INSERT INTO loonstroken 
+				(werknemer_id, periode_id, brutoloon, reiskosten, pensioen_werknemer, loonheffing, nettoloon, vakantiegeld_opbouw, pdf_path) 
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
 				[$werknemer_id, $periode_id, $bruto_maand, $reiskosten, $pensioen['werknemer_bijdrage'], $heffing, $nettoloon, $vakantiegeld_opbouw, $pdf_path],
 				'iiddddddd');
 }
 
 // SEPA genereren
-$sepa_path = generate_sepa_xml($payments, $bedrijf, $periode); // Functie uit sepa.php
-
-// UI
+$sepa_path = generate_sepa_xml($payments, $bedrijf, $periode);
 ?>
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -158,26 +164,35 @@ $sepa_path = generate_sepa_xml($payments, $bedrijf, $periode); // Functie uit se
 
 	<div class="row">
 		<div class="col-md-6">
-			<h5>Loonstroken PDF's</h5>
-			<ul>
+			<h5>Individuele loonstroken</h5>
+			<ul class="list-group">
 				<?php foreach ($pdf_files as $pdf): ?>
-				<li><a href="<?= $pdf ?>" target="_blank" title="Open loonstrook PDF">Loonstrook <?= basename($pdf) ?></a></li>
+				<li class="list-group-item">
+					<a href="<?= $pdf ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+						<?= basename($pdf) ?>
+					</a>
+				</li>
 				<?php endforeach; ?>
 			</ul>
 		</div>
 		<div class="col-md-6">
 			<h5>SEPA Betaalbestand</h5>
 			<?php if ($sepa_path): ?>
-				<a href="<?= $sepa_path ?>" class="btn btn-success" download title="Download SEPA-XML voor upload in je bank (werkt in NL en BE)">
-					<i class="fas fa-download"></i> SEPA-bestand downloaden (<?= count($payments) ?> betalingen)
+				<a href="<?= $sepa_path ?>" class="btn btn-success btn-lg" download>
+					<i class="fas fa-download me-2"></i>SEPA-bestand downloaden (<?= count($payments) ?> betalingen)
 				</a>
+				<p class="mt-3"><small>Upload dit bestand in je bank voor automatische salarisbetaling (werkt in NL en BE).</small></p>
 			<?php else: ?>
 				<p class="text-muted">Geen IBAN's gevonden – geen SEPA gegenereerd.</p>
 			<?php endif; ?>
 		</div>
 	</div>
 
-	<a href="dashboard_bedrijf.php" class="btn btn-primary mt-4" title="Terug naar dashboard">Terug naar dashboard</a>
+	<div class="text-center mt-5">
+		<a href="dashboard_bedrijf.php" class="btn btn-primary btn-lg">
+			<i class="fas fa-arrow-left me-2"></i>Terug naar dashboard
+		</a>
+	</div>
 </div>
 </body>
 </html>

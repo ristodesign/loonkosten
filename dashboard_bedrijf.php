@@ -10,8 +10,12 @@ if (!isset($_SESSION['bedrijf_id'])) {
 }
 
 $bedrijf_id = $_SESSION['bedrijf_id'];
+
+
 $bedrijf = db_getRow("SELECT * FROM bedrijven WHERE id = ?", [$bedrijf_id], 'i');
 $land = $bedrijf['land'];
+
+
 
 // Medewerkers ophalen met contractgegevens
 $medewerkers = db_getAll("
@@ -201,6 +205,118 @@ $aantal_verzuimverzekerd = count(array_filter($medewerkers, fn($m) => $m['verzui
 			</div>
 		</div>
 	</div>
+	
+	
+	<!-- Modal Nieuwe Medewerker -->
+	<div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header bg-success text-white">
+					<h5 class="modal-title" id="addEmployeeModalLabel">Nieuwe medewerker toevoegen</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="addEmployeeForm">
+						<input type="hidden" name="action" value="add_employee">
+						<input type="hidden" name="bedrijf_id" value="<?= $bedrijf_id ?>">
+	
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label">Naam</label>
+								<input type="text" name="naam" class="form-control" required title="Volledige naam van de medewerker">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label">E-mail</label>
+								<input type="email" name="email" class="form-control" required title="Uniek e-mailadres voor login">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label">Adres</label>
+								<input type="text" name="adres" class="form-control" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label">Geboortedatum</label>
+								<input type="date" name="geboortedatum" class="form-control">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label">BSN</label>
+								<input type="text" name="bsn" class="form-control" required title="Burgerservicenummer (NL) of Rijksregisternummer (BE)">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label">Wachtwoord (leeg = automatisch)</label>
+								<input type="password" name="password" class="form-control" title="Laat leeg voor automatisch wachtwoord">
+							</div>
+						</div>
+	
+						<hr>
+	
+						<h5>Contractgegevens</h5>
+						<div class="row g-3">
+							<div class="col-md-4">
+								<label class="form-label">Contracttype</label>
+								<select name="type" class="form-control" required>
+									<option value="Fulltime">Fulltime</option>
+									<option value="Parttime">Parttime</option>
+									<option value="AllInOverurenBetaald">All-in (overuren betaald)</option>
+									<option value="AllInVastSalaris">All-in (vast salaris)</option>
+								</select>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">Bruto salaris (€/maand)</label>
+								<input type="number" step="0.01" name="bruto_salaris" class="form-control" required>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">Uren per week</label>
+								<input type="number" step="0.5" name="contract_uren_per_week" class="form-control" value="40" required>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">Reiskostenvergoeding</label>
+								<div class="form-check mt-4">
+									<input type="checkbox" name="reiskosten_recht" class="form-check-input">
+									<label class="form-check-label">Ja</label>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">Km per dag (bij ja)</label>
+								<input type="number" step="0.1" name="reiskosten_km_per_dag" class="form-control" value="0">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label">Verzuimverzekering</label>
+								<div class="form-check mt-4">
+									<input type="checkbox" name="verzuimverzekering_actief" class="form-check-input">
+									<label class="form-check-label">Actief</label>
+								</div>
+							</div>
+						</div>
+	
+						<div class="mt-4 text-end">
+							<button type="submit" class="btn btn-success" title="Voeg de medewerker toe aan je bedrijf">
+								<i class="fas fa-save me-2"></i>Medewerker toevoegen
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script>
+	$('#addEmployeeForm').on('submit', function(e) {
+		e.preventDefault();
+		const btn = $(this).find('button[type="submit"]');
+		btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Toevoegen...');
+	
+		$.post('backend/employees.php', $(this).serialize(), function(res) {
+			if (res.success) {
+				alert('Medewerker succesvol toegevoegd!');
+				location.reload(); // Herlaad dashboard
+			} else {
+				alert('Fout: ' + (res.message || 'Probeer opnieuw'));
+			}
+		}, 'json').always(function() {
+			btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i>Medewerker toevoegen');
+		});
+	});
+	</script>
 
 	<!-- Tooltips activeren -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

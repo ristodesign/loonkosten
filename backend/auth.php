@@ -1,5 +1,6 @@
 <?php
 // backend/auth.php - Authenticatie (login, registratie, 2FA)
+require_once __DIR__ . '/../config.php';
 require_once 'api_db.php';
 
 $action = $_POST['action'] ?? '';

@@ -1,5 +1,6 @@
 <?php
 // backend/sepa.php - SEPA Credit Transfer XML genereren (pain.001.001.03)
+require_once __DIR__ . '/../config.php';
 require_once 'api_db.php';
 
 function generate_sepa_xml($payments, $bedrijf, $periode) {
